@@ -60,21 +60,21 @@ class DataGen:
     def __init__(self, spark):
         self.spark = spark
 
-    def dataGen(self, shuffle_partitions_requested = 10, partitions_requested = 10, data_rows = 10000):
+    def dataGen(self, shuffle_partitions_requested, partitions_requested, data_rows):
 
         # partition parameters etc.
         self.spark.conf.set("spark.sql.shuffle.partitions", shuffle_partitions_requested)
 
-        fakerDataspec = (DataGenerator(self.spark, rows=data_rows, partitions=partitions_requested)
-                    .withColumn("ak_user_id", "int", random=True)
-                    .withColumn("level_id", "int", random=True)
-                    .withColumn("level_code", "string", values=["a", "b", "c", "d", "f", "g", "h", "e", "i"], random=True)
-                    .withColumn("location", "string", values=["a", "b", "c", "d", "f", "g", "h", "e", "i"], random=True)
-                    .withColumn("first_occurrence_day", "int", random=True)
-                    .withColumn("last_occurrence_day", "int", random=True)
+        dataSpec = (DataGenerator(self.spark, rows=data_rows, partitions=partitions_requested)
+                    .withColumn("unique_id", "int", random=True)
+                    .withColumn("code", "string", values=["a", "b", "c", "d", "f", "g", "h", "e", "i", "f", "g", "h"], random=True)
                     )
 
-        df = fakerDataspec.build()
+        for i in range(1, 100):
+            col_n = f"col{i}"
+            dataSpec = dataSpec.withColumn(col_n, "float", minValue=1, maxValue=10000000, random=True)
+
+        df = dataSpec.build()
 
         return df
 
@@ -84,6 +84,12 @@ partitions_requested=int(sys.argv[2])
 data_rows=int(sys.argv[3])
 db_name=sys.argv[4]
 src_tbl=sys.argv[5]
+
+print("Shuffle partitions requested: ", shuffle_partitions_requested)
+print("Partitions requested: ", partitions_requested)
+print("Data rows: ", data_rows)
+print("DB Name: ", db_name)
+print("SRC Table: ", src_tbl)
 
 #---------------------------------------------------
 #               CREATE SPARK SESSION WITH ICEBERG
@@ -101,11 +107,11 @@ df = myDG.dataGen(shuffle_partitions_requested, partitions_requested, data_rows)
 spark.sql("DROP DATABASE IF EXISTS {} CASCADE".format(db_name))
 spark.sql("CREATE DATABASE IF NOT EXISTS {}".format(db_name))
 
-df.write.mode("overwrite").saveAsTable("{0}.{1}_uniform".format(db_name, src_tbl))
+df.write.mode("overwrite").saveAsTable("{0}.{1}".format(db_name, src_tbl))
 
-df=df.select("*").orderBy(F.rand())
+#df=df.select("*").orderBy(F.rand())
 
-df.write.mode("overwrite").saveAsTable("{0}.{1}_random".format(db_name, src_tbl))
+#df.write.mode("overwrite").saveAsTable("{0}.{1}_random".format(db_name, src_tbl))
 
-spark.sql("DESCRIBE EXTENDED {}.{}_uniform".format(db_name, src_tbl)).show(n=100)
-spark.sql("DESCRIBE EXTENDED {}.{}_random".format(db_name, src_tbl)).show(n=100)
+spark.sql("DESCRIBE EXTENDED {}.{}".format(db_name, src_tbl)).show(n=100)
+#spark.sql("DESCRIBE EXTENDED {}.{}_random".format(db_name, src_tbl)).show(n=100)
