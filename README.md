@@ -81,11 +81,38 @@ cde session create \
 Familiarize yourself with the data:
 
 ```
+Session Commands:
+
+db_name = "db_10M"
+src_tbl = "source_10M"
+tgt_tbl = "target_10M"
+buckets = 25
+
+spark.sql("drop table if exists {0}.{1}".format(db_name, tgt_tbl))
+df = spark.sql("select * from {0}.{1}".format(db_name, src_tbl))
+
 # Spark SQL Command:
 print(spark.sql("SHOW CREATE TABLE CELL_TOWERS_LEFT").collect()[0][0])
 
 # Expected Output:
-
+CREATE TABLE spark_catalog.default.cell_towers_left (
+  `id` INT,
+  `device_id` STRING,
+  `manufacturer` STRING,
+  `event_type` STRING,
+  `longitude` DOUBLE,
+  `latitude` DOUBLE,
+  `iot_signal_1` INT,
+  `iot_signal_3` INT,
+  `iot_signal_4` INT,
+  `cell_tower_failure` INT)
+USING iceberg
+LOCATION 's3a://paul-aug26-buk-a3c2b50a/data/warehouse/tablespace/external/hive/CELL_TOWERS_LEFT'
+TBLPROPERTIES(
+  'current-snapshot-id' = '8073060523561382284',
+  'format' = 'iceberg/parquet',
+  'format-version' = '1',
+  'write.format.default' = 'parquet')
 ```
 
 Now explore bucketing behavior with a series of Examples.
@@ -96,11 +123,6 @@ This produced 25 evenly sized files of 64 MB each corresponding to 25 buckets. E
 
 ```
 ## PySpark Code in Session:
-
-db_name = "db_10M"
-src_tbl = "source_10M"
-tgt_tbl = "target_10M"
-buckets = 25
 
 df.repartition(1) \
   .write \
