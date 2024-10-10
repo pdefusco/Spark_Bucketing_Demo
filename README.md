@@ -1,4 +1,4 @@
-# CDE Spark Bucketing
+# Spark Bucketing in Cloudera
 
 ## Objective
 
