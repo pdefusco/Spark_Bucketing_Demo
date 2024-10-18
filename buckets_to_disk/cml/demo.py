@@ -59,7 +59,7 @@ spark.sql("drop table if exists {0}.{1}".format(db_name, tgt_tbl))
 df = spark.sql("select * from {0}.{1}".format(db_name, src_tbl))
 
 # Spark SQL Command:
-print(spark.sql("SHOW CREATE TABLE CELL_TOWERS_LEFT").collect()[0][0])
+print(spark.sql("SHOW CREATE TABLE {0}.{1}".format(db_name, src_tbl).collect()[0][0])
 
 ## Example 1
 
